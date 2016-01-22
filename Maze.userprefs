@@ -1,0 +1,14 @@
+﻿<Properties>
+  <MonoDevelop.Ide.Workspace />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\Player.js">
+    <Files>
+      <File FileName="Assets\Scripts\Player.js" Line="28" Column="3" />
+      <File FileName="Assets\Scripts\Flame.js" Line="18" Column="4" />
+      <File FileName="Assets\Scripts\MazeGenerator.js" Line="99" Column="27" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+</Properties>
