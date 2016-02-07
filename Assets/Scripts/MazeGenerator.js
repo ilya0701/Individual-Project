@@ -18,8 +18,8 @@ var num : int;
 var done : boolean = false;
 
 public function Start(){
-	height = 100;
-    width = 100;
+	height = 20;
+    width = 20;
     if (done==false){
 		generate();
 		done = true;
@@ -111,7 +111,7 @@ function draw(){
 	
 	ceiling.isStatic = true;
 	ceiling.transform.localScale = Vector3(10*width,10,10*height);
-	Instantiate (ceiling, Vector3 (58*(width/2),60,58*(height/2)-29), rotation);
+	//Instantiate (ceiling, Vector3 (58*(width/2),60,58*(height/2)-29), rotation);
 	
 	wall.isStatic = true;
 	wallwGrate.isStatic = true;
