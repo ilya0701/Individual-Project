@@ -11,7 +11,7 @@ private var timer = 0.0;
 
 function Start () {
 
-	Cursor.visible = false;
+	//Cursor.visible = false;
 	transform.Translate(v);
 	transform.Rotate(90, 0, 0);
 
@@ -20,8 +20,7 @@ function Start () {
 function Update () {
 
 	transform.Rotate(0, Input.GetAxis ("Mouse X") * rotateSpeed, 0);
-//	if (transform.rotation.x<10 && transform.rotation.x>-10)
-//		transform.Rotate(Input.GetAxis ("Mouse Y") * rotateSpeed, 0, 0);
+	transform.Rotate(Input.GetAxis ("Mouse Y") * rotateSpeed, 0, 0);
 	var forward : Vector3 = transform.TransformDirection(Vector3.forward);
 	var curSpeed : float = speed * Input.GetAxis ("Vertical");
 
