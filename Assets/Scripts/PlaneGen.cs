@@ -11,6 +11,9 @@ public class PlaneGen : MonoBehaviour
 	public int resolutionY;
 	private bool door = false;
 	public int rooms = 5;
+	public float branchFactor = 100;
+	private int counter = 0;
+	private int tryCounter = 0;
 
     public Material ceilingMaterial;
 	public Material floorMaterial;
@@ -21,80 +24,120 @@ public class PlaneGen : MonoBehaviour
     void Start()
     {				
 		//GeneratePlane (rooms);
-		while (GeneratePlane(rooms)) 
+		GeneratePath ();
+    }
+
+	void GeneratePath()
+	{
+		while (GenerateRoom(null, branchFactor, 0, true)) 
 		{
 			GameObject[] gameObjects = FindObjectsOfType(typeof(GameObject)) as GameObject[];
 			
-			for (var i=0; i < gameObjects.Length; i++)
+			for (int j=0; j < gameObjects.Length; j++)
 			{
-				if(gameObjects[i].name.Contains("Walls") || gameObjects[i].name.Contains("Floor") || gameObjects[i].name.Contains("Ceiling"))
-					DestroyImmediate(gameObjects[i]);			
+				if(gameObjects[j].name.Contains("Walls") || gameObjects[j].name.Contains("Floor") || gameObjects[j].name.Contains("Ceiling"))
+					DestroyImmediate(gameObjects[j]);			
 			}
+			counter = 0;
 		}
-    }
+	}
 
-
-    bool GeneratePlane(int rooms)
+    bool GenerateRoom(Vector3[] doors, float bf , int tryCounter, bool main)
     {
-		if (rooms > 1)
-			door = true;
-
-		Vector3[] door1_vertex = null;
-		Vector3[] door2_vertex = null;
-        
+		Vector3[] door1_vertex = doors;
+		Vector3[] door2_vertex = null;        
 		bool overlap = false;
-		int tryCounter = 0;
-		int doorNumber;
-		for (int i = 0; i < rooms; i++) 
-		{
-			if (!overlap)
-				tryCounter = 0;
-			int resX = UnityEngine.Random.Range(10,10);
-			int resY = UnityEngine.Random.Range(10,10);
-			float length = UnityEngine.Random.Range(3,3);
-			float width = UnityEngine.Random.Range(3,3);
-			float height = UnityEngine.Random.Range(5,5);
-			Vector3[] vertices = GenerateFloorCeiling (i, i*50, resX, resY, length, width, false, null, null, height);
-			if (i==0 || i== rooms-1)
-				doorNumber = 1;
-			else
-				doorNumber = 2;
+		int doorNumber = 0;
+		int resX = UnityEngine.Random.Range (10, 10);
+		int resY = UnityEngine.Random.Range (10, 10);
+		float length = UnityEngine.Random.Range (3, 3);
+		float width = UnityEngine.Random.Range (3, 3);
+		float height = UnityEngine.Random.Range (5, 5);
+		Vector3[] vertices = GenerateFloorCeiling (counter, counter * 50, resX, resY, length, width, false, null, null, height);
 
-			if (!overlap)
-				door1_vertex = door2_vertex;
+		float factor = bf;
+		float check = UnityEngine.Random.Range (1, 100);
+		while (check<factor) {
+			doorNumber++;
+			check = UnityEngine.Random.Range (1, 100);
+			factor = factor / 1.5f;
+		}
 
-			door2_vertex = GenerateWalls (i, vertices, doorNumber, resX, resY, length, width, false, height);	
-			if (i>0 && i<rooms-1)
-			{
-				overlap = AttachRoom(door1_vertex, door2_vertex, i);
-				if (!overlap)
+		if (doorNumber < 1)
+			doorNumber++;
+
+		door2_vertex = GenerateWalls (counter, vertices, doorNumber, resX, resY, length, width, false, height);	
+
+		if (counter > 0) {
+			overlap = AttachRoom (door1_vertex, door2_vertex, counter);
+			vertices = GenerateFloorCeiling (counter, counter * 50, 2, 2, length, width, true, door1_vertex, door2_vertex, height);
+			GenerateWalls (counter, vertices, 2, 2, 2, length, width, true, height);
+
+			/*	GameObject all_walls;
+			Bounds[] all_bounds = new Bounds[counter*2];
+			for (int j = 0; j < counter; j++) {
+				all_walls = GameObject.Find ("Walls" + (j));
+				all_bounds [j] = all_walls.GetComponent<Renderer> ().bounds;
+				if (j>0)
 				{
-					vertices = GenerateFloorCeiling (i, 0, 2, 2, length, width, true, door1_vertex, door2_vertex, height);
-					GenerateWalls (i, vertices, 2, 2, 2, length, width, true, height);
+					all_walls = GameObject.Find ("CorridorWalls" + (j));
+					all_bounds [j+1] = all_walls.GetComponent<Renderer> ().bounds;
 				}
 			}
-			else if (i==rooms-1)
-			{
-				Vector3[] last_door_vertex = new Vector3 [9];
-				for (int j = 0; j < 4; j++)
-					last_door_vertex[j+5] = door2_vertex[j];
-				overlap = AttachRoom(door1_vertex, last_door_vertex, i);
-				if (!overlap)
-				{
-					vertices = GenerateFloorCeiling (i, 0, 2, 2, length, width, true, door1_vertex, last_door_vertex, height);
-					GenerateWalls (i, vertices, 2, 2, 2, length, width, true, height);
-				}
-			}
-			if (overlap)
-			{
-				if (tryCounter<100)
-				{
-					i--;
-					tryCounter++;
-				}
-				else
+			GameObject corridor_walls = GameObject.Find ("CorridorWalls" + counter);
+			Bounds new_bounds = corridor_walls.GetComponent<Renderer> ().bounds;
+			for (int j = 0; j < counter*2; j++) {
+				if (new_bounds.Intersects (all_bounds [j])) {
+					overlap = true;
 					break;
-			}
+				}
+			}*/
+		}
+
+		int mainDoor = 0;
+		if (main == true) 
+		{
+			mainDoor = UnityEngine.Random.Range(0, doorNumber);
+		}
+
+		if (!overlap) 
+		{
+			if (counter == 0) 
+				for (int j = 0; j < doorNumber; j++) 
+				{ 
+					Vector3[] temp = new Vector3[5];
+					Array.Copy (door2_vertex, j * 5, temp, 0, 5);
+					if(!overlap)
+						counter++;
+					if (j==mainDoor)
+						overlap = GenerateRoom (temp, bf - bf/10, tryCounter, true);
+					else
+					overlap = GenerateRoom (temp, bf/2, tryCounter, false);
+					if (overlap) {
+						j--;
+						tryCounter++;
+					}
+					if (tryCounter > 100)
+						break;
+				}
+			else
+				for (int j = 1; j < doorNumber; j++) {
+					Vector3[] temp = new Vector3[5];
+					Array.Copy (door2_vertex, j * 5, temp, 0, 5);
+					if(!overlap)
+						counter++;
+					if (j==mainDoor)
+					overlap = GenerateRoom (temp, bf - bf/10, tryCounter, true);
+					else
+					overlap = GenerateRoom (temp, bf/3, tryCounter, false);
+					if (overlap) {
+						j--;
+						tryCounter++;
+					}
+					if (tryCounter > 100)
+						break;
+				}
+			tryCounter = 0;
 		}
 		return overlap;
     }
@@ -111,9 +154,9 @@ public class PlaneGen : MonoBehaviour
 	{
 		bool overlap = false;
 
-		float product = (door1 [1].y - door1 [0].y) * (door2 [5].y - door2 [6].y) + (door1 [1].x - door1 [0].x) * (door2 [5].x - door2 [6].x) + (door1 [1].z - door1 [0].z) * (door2 [5].z - door2 [6].z);
+		float product = (door1 [1].y - door1 [0].y) * (door2 [0].y - door2 [1].y) + (door1 [1].x - door1 [0].x) * (door2 [0].x - door2 [1].x) + (door1 [1].z - door1 [0].z) * (door2 [0].z - door2 [1].z);
 		float size1 = Convert.ToSingle (Math.Sqrt ((door1 [1].y - door1 [0].y) * (door1 [1].y - door1 [0].y) + (door1 [1].x - door1 [0].x) * (door1 [1].x - door1 [0].x) + (door1 [1].z - door1 [0].z) * (door1 [1].z - door1 [0].z)));
-		float size2 = Convert.ToSingle (Math.Sqrt ((door2 [6].y - door2 [5].y) * (door2 [6].y - door2 [5].y) + (door2 [6].x - door2 [5].x) * (door2 [6].x - door2 [5].x) + (door2 [6].z - door2 [5].z) * (door2 [6].z - door2 [5].z)));
+		float size2 = Convert.ToSingle (Math.Sqrt ((door2 [1].y - door2 [0].y) * (door2 [1].y - door2 [0].y) + (door2 [1].x - door2 [0].x) * (door2 [1].x - door2 [0].x) + (door2 [1].z - door2 [0].z) * (door2 [1].z - door2 [0].z)));
 		float angle = Convert.ToSingle (Math.Acos (Math.Round (product / (size1 * size2), 4)));
 
 		GameObject floor = GameObject.Find ("Floor" + index);
@@ -128,15 +171,15 @@ public class PlaneGen : MonoBehaviour
 		if (Math.Round (product, 3) < 0 && rotationAngle <= 90)
 			rotationAngle = 360 - rotationAngle;
 
-		float det = (door1 [1].x - door1 [0].x) * (door2 [5].y - door2 [6].y) - (door1 [1].y - door1 [0].y) * (door2 [5].x - door2 [6].x);
+		float det = (door1 [1].x - door1 [0].x) * (door2 [0].y - door2 [1].y) - (door1 [1].y - door1 [0].y) * (door2 [0].x - door2 [1].x);
 		double a = - Math.Atan2 (det, product) * Mathf.Rad2Deg;
 
-		floor.transform.Translate (-(door2 [6].x - door1 [0].x), -(door2 [6].y - door1 [0].y), -(door2 [6].z - door1 [0].z));
-		ceiling.transform.Translate (-(door2 [6].x - door1 [0].x), -(door2 [6].y - door1 [0].y), -(door2 [6].z - door1 [0].z));
-		walls.transform.Translate (-(door2 [6].x - door1 [0].x), -(door2 [6].y - door1 [0].y), -(door2 [6].z - door1 [0].z));
+		floor.transform.Translate (-(door2 [1].x - door1 [0].x), -(door2 [1].y - door1 [0].y), -(door2 [1].z - door1 [0].z));
+		ceiling.transform.Translate (-(door2 [1].x - door1 [0].x), -(door2 [1].y - door1 [0].y), -(door2 [1].z - door1 [0].z));
+		walls.transform.Translate (-(door2 [1].x - door1 [0].x), -(door2 [1].y - door1 [0].y), -(door2 [1].z - door1 [0].z));
 
 		Vector3 temp1 = door1 [0];
-		Vector3 temp2 = door2 [6];
+		Vector3 temp2 = door2 [1];
 
 		for (int i = 0; i < door2.Length; i++) {
 			if (i % 5 != 4) {
@@ -266,9 +309,9 @@ public class PlaneGen : MonoBehaviour
 
 			Vector3 vector = new Vector3(0,0,0);
 			vertices [0] = door1 [3] + vector;
-			vertices [1] = door2 [7] + vector;
+			vertices [1] = door2 [2] + vector;
 			vertices [2] = door1 [2] + vector;
-			vertices [3] = door2 [8] + vector;
+			vertices [3] = door2 [3] + vector;
 		}
 		
 		//bottom face

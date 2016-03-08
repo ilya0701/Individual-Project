@@ -20,7 +20,7 @@ function Start () {
 function Update () {
 
 	transform.Rotate(0, Input.GetAxis ("Mouse X") * rotateSpeed, 0);
-	transform.Rotate(Input.GetAxis ("Mouse Y") * rotateSpeed, 0, 0);
+	//ztransform.Rotate(Input.GetAxis ("Mouse Y") * rotateSpeed, 0, 0);
 	var forward : Vector3 = transform.TransformDirection(Vector3.forward);
 	var curSpeed : float = speed * Input.GetAxis ("Vertical");
 
