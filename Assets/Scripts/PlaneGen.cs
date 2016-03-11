@@ -10,7 +10,6 @@ public class PlaneGen : MonoBehaviour
 	public int resolutionX;
 	public int resolutionY;
 	private bool door = false;
-	public int rooms = 5;
 	public float branchFactor = 100;
 	private int counter = 0;
 	private int tryCounter = 0;
@@ -19,12 +18,30 @@ public class PlaneGen : MonoBehaviour
 	public Material floorMaterial;
 	public Material wallsMaterial;
 
-	private GameObject camera;
+    private Camera camera;
 
     void Start()
-    {				
-		//GeneratePlane (rooms);
-		GeneratePath ();
+    {
+        camera = Camera.main;
+        GeneratePath ();
+}
+
+	void Update()
+	{
+	//	GetCurrentRoom ();
+        if (Input.GetMouseButtonDown(0))
+            SelectObject();
+
+    }
+
+    void SelectObject()
+    {
+        //Ray ray = camera.ScreenPointToRay(Input.mousePosition);
+        //RaycastHit hit;
+        //if (Physics.Raycast(ray, out hit))
+        //{
+      //      Destroy(this.gameObject);
+       // }
     }
 
 	void GeneratePath()
@@ -328,10 +345,10 @@ public class PlaneGen : MonoBehaviour
 		
 		#region UVs
 
-		float minX = 0;
-		float minY = 0;
-		float maxX = 0;
-		float maxY = 0;
+		float minX = float.MaxValue;
+		float minY = float.MaxValue;
+		float maxX = float.MinValue;
+		float maxY = float.MinValue;
 
 		for (int i = 0; i < vertices.Length; i++)
 		{
@@ -416,13 +433,13 @@ public class PlaneGen : MonoBehaviour
 		mesh.triangles = triangles;
 		mesh.RecalculateNormals();
 		mesh.uv = uvs;
-		
+	
 		mesh.RecalculateBounds ();
 		mesh.Optimize ();
 		
 		//Attach material
 		MeshRenderer rend = ceiling.AddComponent<MeshRenderer> ();
-		
+
 		if (ceilingMaterial) {
 			rend.material = ceilingMaterial;
 			rend.material.SetTextureScale("_MainTex", new Vector2(total_distanceX/2, total_distanceY/2));
@@ -459,7 +476,10 @@ public class PlaneGen : MonoBehaviour
 		MeshCollider floorCollider = floor.AddComponent<MeshCollider> ();
 		floorCollider.sharedMesh = mesh;
 
-		return vertices;
+        floor.AddComponent<Floor>();
+        ceiling.AddComponent<Floor>();
+
+        return vertices;
 	}
 
 	Vector3[] GenerateWalls(int index, Vector3[] vertices, int doorNumber, int resX, int resY, float length, float width, bool corridor, float height)
@@ -748,6 +768,8 @@ public class PlaneGen : MonoBehaviour
 		MeshCollider wallsCollider = walls.AddComponent<MeshCollider> ();
 		wallsCollider.sharedMesh = mesh;
 
+        walls.AddComponent<Walls>();
+
 		Vector3[] d_vertex = new Vector3[door_vertex.Length+1];
 		for (int i = 0; i < door_vertex.Length; i++) 
 		{
@@ -758,7 +780,22 @@ public class PlaneGen : MonoBehaviour
 		}
 		d_vertex[door_vertex.Length] = new Vector3(door_vertex[0], 0, 0);
 
+
 		return d_vertex;
+	}
+
+	void GetCurrentRoom()
+	{
+		GameObject camera = GameObject.Find("Main Camera");
+		GameObject[] gameObjects = FindObjectsOfType(typeof(GameObject)) as GameObject[];
+		
+		for (int j=0; j < gameObjects.Length; j++)
+		{
+			GameObject temp = GameObject.Find("Walls" + j);
+			if (temp!=null)
+				if (temp.GetComponent<Renderer> ().bounds.Contains(camera.transform.position))
+					print(j);
+		}
 	}
 
 }
