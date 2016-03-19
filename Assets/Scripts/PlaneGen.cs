@@ -22,26 +22,15 @@ public class PlaneGen : MonoBehaviour
 
     void Start()
     {
+        Physics.gravity = new Vector3(0f, 0f, -1f);
         camera = Camera.main;
         GeneratePath ();
 }
 
 	void Update()
 	{
-	//	GetCurrentRoom ();
-        if (Input.GetMouseButtonDown(0))
-            SelectObject();
+        //	GetCurrentRoom ();
 
-    }
-
-    void SelectObject()
-    {
-        //Ray ray = camera.ScreenPointToRay(Input.mousePosition);
-        //RaycastHit hit;
-        //if (Physics.Raycast(ray, out hit))
-        //{
-      //      Destroy(this.gameObject);
-       // }
     }
 
 	void GeneratePath()
@@ -67,8 +56,8 @@ public class PlaneGen : MonoBehaviour
 		int doorNumber = 0;
 		int resX = UnityEngine.Random.Range (10, 10);
 		int resY = UnityEngine.Random.Range (10, 10);
-		float length = UnityEngine.Random.Range (3, 3);
-		float width = UnityEngine.Random.Range (3, 3);
+		float length = UnityEngine.Random.Range(5, 5);
+		float width = UnityEngine.Random.Range(5, 5);
 		float height = UnityEngine.Random.Range (5, 5);
 		Vector3[] vertices = GenerateFloorCeiling (counter, counter * 50, resX, resY, length, width, false, null, null, height);
 
@@ -90,25 +79,28 @@ public class PlaneGen : MonoBehaviour
 			vertices = GenerateFloorCeiling (counter, counter * 50, 2, 2, length, width, true, door1_vertex, door2_vertex, height);
 			GenerateWalls (counter, vertices, 2, 2, 2, length, width, true, height);
 
-			/*	GameObject all_walls;
-			Bounds[] all_bounds = new Bounds[counter*2];
+		    GameObject all_walls;
+			Bounds[] all_bounds = new Bounds[counter*2-1];
+            int count = 0;
 			for (int j = 0; j < counter; j++) {
 				all_walls = GameObject.Find ("Walls" + (j));
-				all_bounds [j] = all_walls.GetComponent<Renderer> ().bounds;
+				all_bounds [count] = all_walls.GetComponent<Renderer> ().bounds;
+                count++;
 				if (j>0)
 				{
 					all_walls = GameObject.Find ("CorridorWalls" + (j));
-					all_bounds [j+1] = all_walls.GetComponent<Renderer> ().bounds;
+					all_bounds [count] = all_walls.GetComponent<Renderer> ().bounds;
+                    count++;
 				}
 			}
 			GameObject corridor_walls = GameObject.Find ("CorridorWalls" + counter);
 			Bounds new_bounds = corridor_walls.GetComponent<Renderer> ().bounds;
-			for (int j = 0; j < counter*2; j++) {
+			for (int j = 0; j < counter*2-1; j++) {
 				if (new_bounds.Intersects (all_bounds [j])) {
 					overlap = true;
 					break;
 				}
-			}*/
+			}
 		}
 
 		int mainDoor = 0;
@@ -129,7 +121,7 @@ public class PlaneGen : MonoBehaviour
 					if (j==mainDoor)
 						overlap = GenerateRoom (temp, bf - bf/10, tryCounter, true);
 					else
-					overlap = GenerateRoom (temp, bf/2, tryCounter, false);
+					    overlap = GenerateRoom (temp, bf/2, tryCounter, false);
 					if (overlap) {
 						j--;
 						tryCounter++;
@@ -144,9 +136,9 @@ public class PlaneGen : MonoBehaviour
 					if(!overlap)
 						counter++;
 					if (j==mainDoor)
-					overlap = GenerateRoom (temp, bf - bf/10, tryCounter, true);
+					    overlap = GenerateRoom (temp, bf - bf/10, tryCounter, true);
 					else
-					overlap = GenerateRoom (temp, bf/3, tryCounter, false);
+					    overlap = GenerateRoom (temp, bf/3, tryCounter, false);
 					if (overlap) {
 						j--;
 						tryCounter++;
@@ -324,11 +316,14 @@ public class PlaneGen : MonoBehaviour
 		{
 			vertices = new Vector3[8];
 
-			Vector3 vector = new Vector3(0,0,0);
-			vertices [0] = door1 [3] + vector;
-			vertices [1] = door2 [2] + vector;
-			vertices [2] = door1 [2] + vector;
-			vertices [3] = door2 [3] + vector;
+            Vector3 door = new Vector3(door1[1].x - door1[0].x, door1[1].y - door1[0].y, door1[1].z - door1[0].z).normalized;
+            Vector3 perpendicular = Vector3.Cross(door, new Vector3(0, 0, 1)) / 4999;
+
+            Vector3 vector = new Vector3(0,0,0);
+			vertices [0] = door1 [3] + perpendicular;
+			vertices [1] = door2 [2] - perpendicular;
+			vertices [2] = door1 [2] + perpendicular;
+			vertices [3] = door2 [3] - perpendicular;
 		}
 		
 		//bottom face
@@ -476,8 +471,8 @@ public class PlaneGen : MonoBehaviour
 		MeshCollider floorCollider = floor.AddComponent<MeshCollider> ();
 		floorCollider.sharedMesh = mesh;
 
-        floor.AddComponent<Floor>();
-        ceiling.AddComponent<Floor>();
+        floor.AddComponent<ObjectManipulate>();
+        ceiling.AddComponent<ObjectManipulate>();
 
         return vertices;
 	}
@@ -768,9 +763,9 @@ public class PlaneGen : MonoBehaviour
 		MeshCollider wallsCollider = walls.AddComponent<MeshCollider> ();
 		wallsCollider.sharedMesh = mesh;
 
-        walls.AddComponent<Walls>();
+        walls.AddComponent<ObjectManipulate>();
 
-		Vector3[] d_vertex = new Vector3[door_vertex.Length+1];
+        Vector3[] d_vertex = new Vector3[door_vertex.Length+1];
 		for (int i = 0; i < door_vertex.Length; i++) 
 		{
 			if (i%5==4)

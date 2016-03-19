@@ -12,28 +12,20 @@ public class Menu : MonoBehaviour {
 
     private DirectoryInfo info;
     private FileInfo[] fileInfo;
+    private DirectoryInfo[] dirInfo;
+    private int resourcesPathLength;
 
     // Use this for initialization
     void Start () {
 
         string path = "";
         if (main)
-            path = "C:/Users/ilyar/Desktop/ip/Individual-Project/Assets/Resources";
+        {
+            path = "C:/Users/Ilya/Desktop/project/Individual-Project/Assets/Resources";
+            resourcesPathLength = path.Length;
+        }
 
         CreateMenu(path);
-
-       /* UnityEngine.UI.Button myButton = Instantiate(Button);
-        myButton.transform.SetParent(Panel.transform);
-        float z = 0 - myButton.transform.position.z;
-        myButton.transform.Translate(0,0,z);
-        myButton.onClick.AddListener(delegate () { Scripts.GetComponent<ObjectGenerate> ().Generate("Props/Table_A"); });
-
-        UnityEngine.UI.Button myButton1 = Instantiate(Button);
-        myButton1.transform.SetParent(Panel.transform);
-        z = 0 - myButton1.transform.position.z;
-        myButton1.transform.Translate(0, 0, z);
-        myButton1.onClick.AddListener(delegate () { Scripts.GetComponent<ObjectGenerate>().Generate("Props/Table_A"); });*/
-
     }
 	
 	// Update is called once per frame
@@ -45,50 +37,88 @@ public class Menu : MonoBehaviour {
 
     void CreateMenu(string path)
     {
-        Button[] buttons = FindObjectsOfType(typeof(Button)) as Button[];
-        foreach (var button in buttons)
-            Destroy(button);
+
+        foreach (var button in FindObjectsOfType(typeof(GameObject)) as GameObject[])
+            if (button.name == "Button(Clone)")
+                button.SetActive(false);
 
         info = new DirectoryInfo(path);
         fileInfo = info.GetFiles();
+        dirInfo = info.GetDirectories();
 
-        foreach (var file in fileInfo)
+        BackButton(path);
+
+        foreach (var dir in dirInfo)
         {
-
-            FileAttributes attr = File.GetAttributes(path + "/" + file.Name);
-            //  if ((attr & FileAttributes.Directory) == FileAttributes.Directory)
-            //  {
             UnityEngine.UI.Button myButton = Instantiate(Button);
             myButton.transform.SetParent(Panel.transform);
             float z = 0 - myButton.transform.position.z;
             myButton.transform.Translate(0, 0, z);
             Text text = myButton.transform.FindChild("Text").GetComponent<Text>();
-            text.text = removeExtension(file.Name);
+            text.text = dir.Name;
 
             Button temp = null;
-
-            buttons = FindObjectsOfType(typeof(Button)) as Button[];
+            Button[] buttons = FindObjectsOfType(typeof(Button)) as Button[];
 
             foreach (var button in buttons)
-                if (button.transform.FindChild("Text").GetComponent<Text>().text == removeExtension(file.Name))
-                {
+                if (button.transform.FindChild("Text").GetComponent<Text>().text == dir.Name)
                     temp = button;
-                }
 
-            temp.onClick.AddListener(delegate () { Scripts.GetComponent<Menu>().CreateMenu(path + "/" + removeExtension(file.Name)); });
+            string t = path + "/" + dir.Name;
+            temp.onClick.AddListener(delegate () { Scripts.GetComponent<Menu>().CreateMenu(t); });
+        }
 
+        foreach (var file in fileInfo)
+        {
+            if (file.Extension != ".meta")
+            {
+                UnityEngine.UI.Button myButton = Instantiate(Button);
+                myButton.transform.SetParent(Panel.transform);
+                float z = 0 - myButton.transform.position.z;
+                myButton.transform.Translate(0, 0, z);
+                Text text = myButton.transform.FindChild("Text").GetComponent<Text>();
+                text.text = Substring(file.Name, '.');
 
-            //   }
+                Button temp = null;
+                Button[] buttons = FindObjectsOfType(typeof(Button)) as Button[];
 
+                foreach (var button in buttons)
+                    if (button.transform.FindChild("Text").GetComponent<Text>().text == Substring(file.Name, '.'))
+                        temp = button;
+
+                string t = path.Substring(resourcesPathLength + 1, path.Length - resourcesPathLength - 1) + "/" + Substring(file.Name, '.');
+                temp.onClick.AddListener(delegate () { Scripts.GetComponent<ObjectGenerate>().Generate(t); });
+            }
         }
     }
 
-    string removeExtension(string fileName)
+    void BackButton(string path)
     {
-        int lastIndex = 0;
+        UnityEngine.UI.Button myButton = Instantiate(Button);
+        myButton.transform.SetParent(Panel.transform);
+        float z = 0 - myButton.transform.position.z;
+        myButton.transform.Translate(0, 0, z);
+        Text text = myButton.transform.FindChild("Text").GetComponent<Text>();
+        text.text = "Back";
+
+        Button temp = null;
+        Button[] buttons = FindObjectsOfType(typeof(Button)) as Button[];
+
+        foreach (var button in buttons)
+            if (button.transform.FindChild("Text").GetComponent<Text>().text == "Back")
+                temp = button;
+
+        string t = temp.transform.FindChild("Text").GetComponent<Text>().text;
+        temp.onClick.AddListener(delegate () { Scripts.GetComponent<Menu>().CreateMenu(Substring(path, '/')); });
+    }
+
+
+    string Substring(string fileName, char symbol)
+    {
+        int lastIndex = fileName.Length;
         for (int i = 0; i < fileName.Length; i++)
         {
-            if (fileName[i] == '.')
+            if (fileName[i] == symbol)
                 lastIndex = i;
         }
         return fileName.Substring(0, lastIndex);
